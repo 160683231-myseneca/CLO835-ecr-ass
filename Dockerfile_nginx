@@ -1,0 +1,9 @@
+FROM nginx:latest
+
+# RUN apt-get update && apt-get install -y nginx && apt-get install -y curl && apt-get install -y net-tools
+
+RUN rm /etc/nginx/conf.d/default.conf
+
+COPY reverse-proxy.conf /etc/nginx/conf.d/default.conf
+
+EXPOSE 80
