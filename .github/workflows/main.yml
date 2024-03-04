@@ -34,13 +34,14 @@ jobs:
         run: |
           echo "ECR_REGISTRY=${{ steps.login-ecr.outputs.registry }}" >> $GITHUB_ENV
           echo "ECR_REPOSITORY_MYSQL=mysql_image" >> $GITHUB_ENV
-          echo "ECR_REPOSITORY_APP=app_image" >> $GITHUB_ENV
+          echo "ECR_REPOSITORY_APP_V1=app_v1_image" >> $GITHUB_ENV
+          echo "ECR_REPOSITORY_APP_V2=app_v2_image" >> $GITHUB_ENV
           echo "ECR_REPOSITORY_PROXY=proxy_image" >> $GITHUB_ENV
 
       - name: Get Current Image Tags
         id: get-current-tags
         run: |
-          CURRENT_TAG=$(aws ecr describe-images --repository-name $ECR_REPOSITORY_APP --query 'imageDetails | sort_by(@, &imagePushedAt)[-1].imageTags' --output json)
+          CURRENT_TAG=$(aws ecr describe-images --repository-name $ECR_REPOSITORY_APP_V1 --query 'imageDetails | sort_by(@, &imagePushedAt)[-1].imageTags' --output json)
           if [ $CURRENT_TAG == null ]; then
             CURRENT_TAG="None"
           else 
@@ -73,7 +74,7 @@ jobs:
           NEW_TAG="v$MAJOR.$MINOR.$PATCH"
           echo "NEW_TAG=$NEW_TAG" >> $GITHUB_ENV
 
-      - name: Build, test, tag, and push mysql image to Amazon ECR
+      - name: Build, test, tag, and push image to Amazon ECR
         run: |
           echo "Starting DB container..."
           docker build -t ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY_MYSQL }}:$NEW_TAG -t ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY_MYSQL }}:latest -f Dockerfile_mysql .
@@ -90,10 +91,10 @@ jobs:
           echo "DBHOST=$DBHOST" >> $GITHUB_ENV
           echo "DBPORT=3306" >> $GITHUB_ENV
 
-          docker build -t ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY_APP }}:$NEW_TAG -t ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY_APP }}:latest .
+          docker build -t ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY_APP_V1 }}:$NEW_TAG -t ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY_APP_V1 }}:latest -f Dockerfile_v1 .
 
           echo "Starting webserver containers..."
-          (docker run -p 8082:8080 -e DBHOST=$DBHOST -e DBPORT=$DBPORT -e APP_COLOR="pink" -d --name app_pink ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY_APP }}:$NEW_TAG && echo "App2 started") &
+          (docker run -p 8082:8080 -e DBHOST=$DBHOST -e DBPORT=$DBPORT -e APP_COLOR="pink" -d --name app_pink ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY_APP_V1 }}:$NEW_TAG && echo "App2 started") &
           wait
           echo "All containers started!"
           sleep 10
@@ -101,8 +102,11 @@ jobs:
           # Unit tests
           curl localhost:8082 -vvv
 
+          docker build -t ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY_APP_V2 }}:$NEW_TAG -t ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY_APP_V2 }}:latest -f Dockerfile_v2 .
+
           docker build -t ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY_PROXY }}:$NEW_TAG -t ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY_PROXY }}:latest -f Dockerfile_nginx .
           
           docker push $ECR_REGISTRY/$ECR_REPOSITORY_MYSQL --all-tags
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY_APP --all-tags
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY_APP_V1 --all-tags
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY_APP_V2 --all-tags
           docker push $ECR_REGISTRY/$ECR_REPOSITORY_PROXY --all-tags
