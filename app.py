@@ -36,6 +36,35 @@ color_codes = {
     "lime": "#C1FF9C",
 }
 
+color_pattern = "|".join(color_codes.keys())
+version_color_regex = re.compile(rf"^/(?P<version>v\d+(\.\d+)*)/(?P<color>{color_pattern})(?:/|$)")
+color_version_regex = re.compile(rf"^/(?P<color>{color_pattern})/(?P<version>v\d+(\.\d+)*)(?:/|$)")
+version_regex= re.compile(r"^/(?P<version>v\d+(\.\d+)*)(?:/|$)")
+color_regex = re.compile(rf"^/(?P<color>{color_pattern})(?:/|$)")
+
+def extract_version_and_color(request_path):
+    version_color_match = version_color_regex.match(request_path)
+    if version_color_match:
+        version = version_color_match.group('version')
+        color = version_color_match.group('color')
+    else:
+        color_version_match = color_version_regex.match(request_path)
+        if color_version_match:
+            version = color_version_match.group('version')
+            color = color_version_match.group('color')
+        else:
+            version_match = version_regex.match(request_path)
+            if version_match:
+                version = version_match.group('version')
+                color = None
+            else:
+                color_match = color_regex.match(request_path)
+                if color_match:
+                    color = color_match.group('color')
+                    version = None
+                else:
+                    version, color = None, None
+    return version, color
 
 # Process command line arguments
 parser = argparse.ArgumentParser()
@@ -69,18 +98,9 @@ def inject_version_and_color():
     
 @app.before_request
 def initialize_version_color():
-    version_color_match = re.match(r"^/(?P<version>v[12])/(?P<color>blue|pink)(?:/|$)", request.path)
-    if version_color_match:
-        g.version = version_color_match.group('version')
-        g.color = version_color_match.group('color')
-    else:
-        color_match = re.match(r"^/(?P<color>blue|pink)(?:/|$)", request.path)
-        if color_match:
-            g.version = None
-            g.color = color_match.group('color')
-        else:
-            g.version = None
-            g.color = None
+    version, color = extract_version_and_color(request.path)
+    g.version = version
+    g.color = color
 
 @app.context_processor
 def inject_versioned_url():
@@ -89,6 +109,8 @@ def inject_versioned_url():
         color = g.get('color')
         if version and color:
             return f"/{version}/{color}/{endpoint.lstrip('/')}"
+        elif version:
+            return f"/{version}/{endpoint.lstrip('/')}"
         elif color:
             return f"/{color}/{endpoint.lstrip('/')}"
         else:
@@ -97,21 +119,21 @@ def inject_versioned_url():
 
 
 @app.route("/", methods=['GET', 'POST'])
-@app.route("/<version>/<color>/", methods=['GET', 'POST'])
-@app.route("/<color>/", methods=['GET', 'POST'])
-def home(version=None, color=None):
-    return render_template('addemp.html',version=version,color=color)
+@app.route("/<path1>/", methods=['GET', 'POST'])
+@app.route("/<path1>/<path2>/", methods=['GET', 'POST'])
+def home(path1=None, path2=None):
+    return render_template('addemp.html')
 
 @app.route("/about", methods=['GET','POST'])
-@app.route("/<version>/<color>/about", methods=['GET', 'POST'])
-@app.route("/<color>/about", methods=['GET', 'POST'])
-def about(version=None, color=None):
-    return render_template('about.html',version=version,color=color)
+@app.route("/<path1>/about", methods=['GET', 'POST'])
+@app.route("/<path1>/<path2>/about", methods=['GET', 'POST'])
+def about(path1=None, path2=None):
+    return render_template('about.html')
     
 @app.route("/addemp", methods=['POST'])
-@app.route("/<version>/<color>/addemp", methods=['GET', 'POST'])
-@app.route("/<color>/addemp", methods=['GET', 'POST'])
-def addemp(version=None, color=None):
+@app.route("/<path1>/addemp", methods=['GET', 'POST'])
+@app.route("/<path1>/<path2>/addemp", methods=['GET', 'POST'])
+def addemp(path1=None, path2=None):
     emp_id = request.form['emp_id']
     first_name = request.form['first_name']
     last_name = request.form['last_name']
@@ -132,19 +154,19 @@ def addemp(version=None, color=None):
         cursor.close()
 
     print("all modification done...")
-    return render_template('addempoutput.html', name=emp_name,version=version,color=color)
+    return render_template('addempoutput.html', name=emp_name)
 
 @app.route("/getemp", methods=['GET', 'POST'])
-@app.route("/<version>/<color>/getemp", methods=['GET', 'POST'])
-@app.route("/<color>/getemp", methods=['GET', 'POST'])
-def getemp(version=None, color=None):
+@app.route("/<path1>/getemp", methods=['GET', 'POST'])
+@app.route("/<path1>/<path2>/getemp", methods=['GET', 'POST'])
+def getemp(path1=None, path2=None):
     return render_template("getemp.html")
 
 
 @app.route("/fetchdata", methods=['GET','POST'])
-@app.route("/<version>/<color>/fetchdata", methods=['GET', 'POST'])
-@app.route("/<color>/fetchdata", methods=['GET', 'POST'])
-def fetchdata(version=None, color=None):
+@app.route("/<path1>/fetchdata", methods=['GET', 'POST'])
+@app.route("/<path1>/<path2>/fetchdata", methods=['GET', 'POST'])
+def fetchdata(path1=None, path2=None):
     emp_id = request.form['emp_id']
 
     output = {}
@@ -169,7 +191,7 @@ def fetchdata(version=None, color=None):
         cursor.close()
 
     return render_template("getempoutput.html", id=output["emp_id"], fname=output["first_name"],
-                           lname=output["last_name"], interest=output["primary_skills"], location=output["location"],version=version,color=color)
+                           lname=output["last_name"], interest=output["primary_skills"], location=output["location"])
 
 if __name__ == '__main__':
 
