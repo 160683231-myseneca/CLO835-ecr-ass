@@ -69,8 +69,6 @@ def inject_version_and_color():
     
 @app.before_request
 def initialize_version_color():
-    app.logger.info(f"INITVersionPRE: {g.get('version')}, Color: {g.get('color')}")
-    app.logger.info(f"Request Path: {request.path}")
     version_color_match = re.match(r"^/(?P<version>v[12])/(?P<color>blue|pink)(?:/|$)", request.path)
     if version_color_match:
         g.version = version_color_match.group('version')
@@ -83,36 +81,12 @@ def initialize_version_color():
         else:
             g.version = None
             g.color = None
-    app.logger.info(f"INITVersionPOST: {g.get('version')}, Color: {g.get('color')}")
-    app.logger.info(f"Request Path: {request.path}")
-
-@app.after_request
-def update_version_color(response):
-    app.logger.info(f"UPDATEVersionPRE: {g.get('version')}, Color: {g.get('color')}")
-    app.logger.info(f"Request Path: {request.path}")
-    version_color_match = re.match(r"^/(?P<version>v[12])/(?P<color>blue|pink)(?:/|$)", request.path)
-    if version_color_match:
-        g.version = version_color_match.group('version')
-        g.color = version_color_match.group('color')
-    else:
-        color_match = re.match(r"^/(?P<color>blue|pink)(?:/|$)", request.path)
-        if color_match:
-            g.version = None
-            g.color = color_match.group('color')
-        else:
-            g.version = None
-            g.color = None
-    app.logger.info(f"UPDATEVersionPOST: {g.get('version')}, Color: {g.get('color')}")
-    app.logger.info(f"Request Path: {request.path}")
-    return response
 
 @app.context_processor
 def inject_versioned_url():
     def complete_url(endpoint, **values):
         version = g.get('version')
         color = g.get('color')
-        app.logger.info(f"CONTEXTversion: {g.get('version')}, Color: {g.get('color')}")
-        app.logger.info(f"Request Path: {request.path}")
         if version and color:
             return f"/{version}/{color}/{endpoint.lstrip('/')}"
         elif color:
