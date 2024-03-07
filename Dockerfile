@@ -9,6 +9,11 @@ RUN apt-get update -y && apt-get install -y \
 
 RUN pip install --upgrade pip
 
+ARG APP_COLOR
+ARG VERSION
+
+ENV APP_COLOR=${APP_COLOR} VERSION=${VERSION}
+
 WORKDIR /app
 
 COPY . .
@@ -18,4 +23,4 @@ RUN pip install -r requirements.txt
 EXPOSE 8080
 
 ENTRYPOINT [ "python3" ]
-CMD [ "app-v1.py" ]
+CMD [ "app.py" ]

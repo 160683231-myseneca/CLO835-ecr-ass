@@ -22,9 +22,10 @@ start_containers() {
   docker build -t app_image .
 
   echo "Starting webserver containers..."
-  (docker run -p 8081:8080 -e DBHOST=$DBHOST -e DBPORT=$DBPORT -e APP_COLOR="blue" --net custom_nw -d --name app_blue app_image && echo "App1 started") &
-  (docker run -p 8082:8080 -e DBHOST=$DBHOST -e DBPORT=$DBPORT -e APP_COLOR="pink" --net custom_nw -d --name app_pink app_image && echo "App2 started") &
-  (docker run -p 8083:8080 -e DBHOST=$DBHOST -e DBPORT=$DBPORT -e APP_COLOR="lime" --net custom_nw -d --name app_lime app_image && echo "App3 started") &
+  (docker run -p 8081:8080 -e DBHOST=$DBHOST -e DBPORT=$DBPORT -e APP_COLOR="blue" -e VERSION="v1" --net custom_nw -d --name app_blue app_image && echo "App1 started") &
+  (docker run -p 8082:8080 -e DBHOST=$DBHOST -e DBPORT=$DBPORT -e APP_COLOR="pink" -e VERSION="v1" --net custom_nw -d --name app_pink app_image && echo "App2 started") &
+  (docker run -p 8083:8080 -e DBHOST=$DBHOST -e DBPORT=$DBPORT -e APP_COLOR="lime" -e VERSION="v1" --net custom_nw -d --name app_lime app_image && echo "App3 started") &
+  (docker run -p 8084:8080 -e DBHOST=$DBHOST -e DBPORT=$DBPORT -e APP_COLOR="red" -e VERSION="v2" --net custom_nw -d --name app_red app_image && echo "App4 started") &
 
   wait  # Wait for all background processes to finish
   echo "All containers started!"
