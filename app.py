@@ -16,6 +16,8 @@ app.logger.setLevel(logging.INFO)
 DBHOST = os.environ.get("DBHOST", "localhost")
 DBUSER = os.environ.get("DBUSER","root")
 DBPWD = os.environ.get("DBPWD")
+if DBPWD is None:
+    raise ValueError("DBPWD environment variable is not set")
 DATABASE = os.environ.get("DATABASE", "employees")
 VERSION_FROM_ENV = os.environ.get("VERSION", "v1")
 COLOR_FROM_ENV = os.environ.get("APP_COLOR", "lime")

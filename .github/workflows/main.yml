@@ -86,7 +86,7 @@ jobs:
           echo "DBPORT=3306" >> $GITHUB_ENV
           docker build -t ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY_APP }}:$NEW_TAG -t ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY_APP }}:latest .
           echo "Starting webserver containers..."
-          (docker run -p 8082:8080 -e DBHOST=$DBHOST -e DBPORT=$DBPORT -e APP_COLOR="pink" -d --name app_pink ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY_APP }}:$NEW_TAG && echo "App2 started") &
+          (docker run -p 8082:8080 -e DBHOST=$DBHOST -e DBPWD=${{ secrets.MYSQL_ROOT_PASSWORD }} -d --name app_pink ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY_APP }}:$NEW_TAG && echo "App2 started") &
           wait
           echo "All containers started!"
           sleep 10
