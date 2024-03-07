@@ -14,8 +14,8 @@ app.logger.addHandler(logging.StreamHandler(sys.stdout))
 app.logger.setLevel(logging.INFO)
 
 DBHOST = os.environ.get("DBHOST", "localhost")
-DBUSER = os.environ.get("DBUSER", "root")
-DBPWD = os.environ.get("DBPWD", "pw")
+DBUSER = os.environ.get("DBUSER","root")
+DBPWD = os.environ.get("DBPWD")
 DATABASE = os.environ.get("DATABASE", "employees")
 VERSION_FROM_ENV = os.environ.get("VERSION", "v1")
 COLOR_FROM_ENV = os.environ.get("APP_COLOR", "lime")
@@ -73,7 +73,10 @@ parser.add_argument('--version', required=False, default=VERSION_FROM_ENV)
 args = parser.parse_args()
 
 VERSION = args.version
-COLOR = args.color
+if args.color in color_codes:
+    COLOR = args.color
+else:
+    COLOR = "red"
 
 # Set the app configuration for VERSION and COLOR
 app.config['VERSION'] = VERSION

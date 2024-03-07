@@ -9,6 +9,11 @@ RUN apt-get update -y && apt-get install -y \
 
 RUN pip install --upgrade pip
 
+ARG APP_COLOR
+ARG VERSION
+
+ENV APP_COLOR=${APP_COLOR} VERSION=${VERSION}
+
 WORKDIR /app
 
 COPY . .
